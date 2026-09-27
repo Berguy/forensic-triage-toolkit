@@ -6,5 +6,12 @@ from forensic_triage.parsers.base_parser import (
     ParsedArtifact,
 )
 from forensic_triage.parsers.prefetch_parser import PrefetchParser
+from forensic_triage.parsers.registry_parser import RegistryParser
 
-__all__ = ["BaseParser", "MalformedArtifactError", "ParsedArtifact", "PrefetchParser"]
+__all__ = [
+    "BaseParser",
+    "MalformedArtifactError",
+    "ParsedArtifact",
+    "PrefetchParser",
+    "RegistryParser",
+]
