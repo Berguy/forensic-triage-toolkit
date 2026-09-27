@@ -6,15 +6,15 @@ from forensic_triage.parsers.base_parser import (
     ParsedArtifact,
 )
 from forensic_triage.parsers.evtx_parser import EvtxParser
-from forensic_triage.parsers.lnk_parser import LnkParser, LNK_CLSID, LNK_MAGIC
+from forensic_triage.parsers.lnk_parser import LNK_CLSID, LNK_MAGIC, LnkParser
 from forensic_triage.parsers.prefetch_parser import PrefetchParser
 from forensic_triage.parsers.registry_parser import RegistryParser
 
 __all__ = [
-    "BaseParser",
-    "EvtxParser",
     "LNK_CLSID",
     "LNK_MAGIC",
+    "BaseParser",
+    "EvtxParser",
     "LnkParser",
     "MalformedArtifactError",
     "ParsedArtifact",

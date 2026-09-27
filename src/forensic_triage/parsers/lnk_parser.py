@@ -127,14 +127,12 @@ class LnkParser(BaseParser):
 
         # StringData: campos opcionais prefixados por contagem de caracteres.
         offset = 0x4C
-        if flags & FLAG_HAS_LINK_TARGET_IDLIST:
-            if offset + 2 <= len(raw):
-                (idlist_size,) = struct.unpack_from("<H", raw, offset)
-                offset += 2 + idlist_size
-        if flags & FLAG_HAS_LINK_INFO:
-            if offset + 4 <= len(raw):
-                (link_info_size,) = struct.unpack_from("<I", raw, offset)
-                offset += link_info_size
+        if flags & FLAG_HAS_LINK_TARGET_IDLIST and offset + 2 <= len(raw):
+            (idlist_size,) = struct.unpack_from("<H", raw, offset)
+            offset += 2 + idlist_size
+        if flags & FLAG_HAS_LINK_INFO and offset + 4 <= len(raw):
+            (link_info_size,) = struct.unpack_from("<I", raw, offset)
+            offset += link_info_size
 
         string_fields = [
             (FLAG_HAS_NAME, "name"),
