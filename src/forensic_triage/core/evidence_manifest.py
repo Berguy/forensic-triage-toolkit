@@ -10,7 +10,7 @@ import hashlib
 import json
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 
@@ -38,7 +38,7 @@ class EvidenceItem:
     evidence_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     collector_identity: str = "not_set"
     collection_timestamp_utc: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
     tool_version: str = "0.1.0"
     previous_chain_hash: str | None = None
@@ -114,7 +114,7 @@ class EvidenceManifest:
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     @classmethod
-    def import_json(cls, path: Path) -> "EvidenceManifest":
+    def import_json(cls, path: Path) -> EvidenceManifest:
         payload = json.loads(path.read_text(encoding="utf-8"))
         manifest = cls(
             case_id=payload["case_id"],

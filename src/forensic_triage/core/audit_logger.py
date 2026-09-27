@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -19,8 +19,8 @@ class AuditLogger:
 
     def log_action(self, action: str, details: dict | None = None) -> str:
         entry = {
-            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-            "operator": self.operator,
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+            "operator_identity": self.operator,
             "action": action,
             "details": details or {},
             "previous_hash": self._previous_hash,
