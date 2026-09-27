@@ -17,7 +17,7 @@ Triagem forense de sistemas comprometidos com integridade criptográfica e confo
 - `src/forensic_triage/integrity/` — hashing criptográfico multialgoritmo
 - `tests/` — suíte de testes de integridade e conformidade
 
-## Como rodar os testes
+## Como rodar os teste:
 
 ```bash
 python -m venv .venv
