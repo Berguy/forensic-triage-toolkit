@@ -121,9 +121,9 @@ def test_registry_parses_run_key(tmp_path: Path):
     assert result.data["hive_type"] == "software"
     assert result.data["format_version"] == "1.3"
     assert len(result.data["run_keys"]) == 1
-    # Verifica o nome do arquivo (imune a barras duplas/caixa do caminho).
     command = result.data["run_keys"][0]["command"]
-    assert command.lower().endswith("evil.exe")
+    # Asserção imune a variações de caminho: compara o nome do arquivo.
+    assert Path(command).name.lower() == "evil.exe"
 
 
 def test_registry_reports_last_written(tmp_path: Path):

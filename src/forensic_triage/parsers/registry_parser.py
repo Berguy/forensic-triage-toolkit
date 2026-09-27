@@ -42,17 +42,16 @@ def _filetime_to_iso(ticks: int) -> str:
 
 
 def _decode_utf16le_value(raw: bytes) -> str:
-    """Decodifica um valor UTF-16-LE removendo nulos terminais com segurança.
+    """Decodifica um valor UTF-16-LE de forma robusta.
 
-    Evita o corte prematuro do último caractere (bug de split por \\x00\\x00).
+    Decodifica o bloco inteiro como UTF-16-LE e remove os caracteres nulos
+    terminais DEPOIS da decodificação. Isso garante que nenhum caractere
+    válido seja cortado, independentemente de padding ou terminador.
     """
     if not raw:
         return ""
-    # Remove bytes nulos do final (terminator e padding).
-    trimmed = raw.rstrip(b"\x00")
-    if len(trimmed) % 2:
-        trimmed = trimmed[:-1]
-    return trimmed.decode("utf-16-le", errors="replace")
+    text = raw.decode("utf-16-le", errors="replace")
+    return text.rstrip("\x00")
 
 
 class RegistryParser(BaseParser):
