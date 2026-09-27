@@ -1,0 +1,1 @@
+"""Núcleo de integridade e custódia — ISO/IEC 27037/27043."""

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forensic-triage-toolkit"
+version = "0.1.0"
+description = "Triagem forense de sistemas comprometidos com integridade criptográfica e conformidade ISO/IEC 27037, 27041, 27042, 27043 e CNJ 552/2021"
+requires-python = ">=3.12"
+dependencies = [
+    "typer>=0.12",
+    "pydantic>=2.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --cov=forensic_triage --cov-report=term-missing"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

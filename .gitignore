@@ -1,0 +1,32 @@
+# Ambientes virtuais
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Build
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# SO
+Thumbs.db
+Desktop.ini
+
+# Runtime do projeto: evidências e outputs nunca vão para o git
+output/
+evidences/
+*.manifest.json
+*.audit.log

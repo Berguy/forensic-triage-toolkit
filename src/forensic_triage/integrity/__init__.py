@@ -1,0 +1,1 @@
+"""Camada de integridade criptográfica — ISO/IEC 27037."""
