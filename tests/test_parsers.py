@@ -9,6 +9,7 @@ from pathlib import Path, PureWindowsPath
 import pytest
 
 from forensic_triage.parsers.base_parser import MalformedArtifactError
+from forensic_triage.parsers.evtx_parser import EvtxParser
 from forensic_triage.parsers.prefetch_parser import PrefetchParser
 from forensic_triage.parsers.registry_parser import RegistryParser
 
@@ -48,6 +49,24 @@ def _build_hive(run_command: str = "", hive_type: int = 2) -> bytes:
         payload += run_command.encode("utf-16-le")
         payload += b"\x00\x00"
         payload += b"\x00" * 64
+    return bytes(payload)
+
+
+def _build_evtx(events: list[tuple[int, int]]) -> bytes:
+    """Monta um arquivo .evtx sintético: header ElfFile + registros.
+
+    events: lista de (event_id, filetime_ticks).
+    """
+    header = bytearray(4096)
+    header[:8] = b"ElfFile\x00"
+    payload = bytearray(header)
+    for event_id, ticks in events:
+        record = bytearray(0x40)
+        record[:4] = b"\x2a\x2a\x00\x00"
+        struct.pack_into("<I", record, 4, len(record))
+        struct.pack_into("<Q", record, 0x10, ticks)
+        struct.pack_into("<H", record, 0x30, event_id)
+        payload += record
     return bytes(payload)
 
 
@@ -151,3 +170,52 @@ def test_registry_rejects_truncated(tmp_path: Path):
 
     with pytest.raises(MalformedArtifactError):
         RegistryParser(path).parse()
+
+
+# --- Testes do EVTX ---
+
+def test_evtx_parses_security_events(tmp_path: Path):
+    path = tmp_path / "Security.evtx"
+    path.write_bytes(
+        _build_evtx(
+            [
+                (4624, SAMPLE_TICKS),
+                (4625, SAMPLE_TICKS),
+                (1102, SAMPLE_TICKS),
+            ]
+        )
+    )
+
+    result = EvtxParser(path).parse()
+
+    assert result.parser == "evtx"
+    assert result.artifact_id == path.name
+    assert result.data["event_count"] == 3
+    ids = {e["event_id"] for e in result.data["events"]}
+    assert ids == {4624, 4625, 1102}
+
+
+def test_evtx_reports_written_time(tmp_path: Path):
+    path = tmp_path / "Security.evtx"
+    path.write_bytes(_build_evtx([(4624, SAMPLE_TICKS)]))
+
+    result = EvtxParser(path).parse()
+
+    expected = (FILETIME_EPOCH + timedelta(microseconds=SAMPLE_TICKS // 10)).isoformat()
+    assert result.data["events"][0]["written_utc"] == expected
+
+
+def test_evtx_rejects_bad_magic(tmp_path: Path):
+    path = tmp_path / "BAD.evtx"
+    path.write_bytes(b"NOTEVTX\x00" + b"\x00" * 4096)
+
+    with pytest.raises(MalformedArtifactError):
+        EvtxParser(path).parse()
+
+
+def test_evtx_rejects_truncated(tmp_path: Path):
+    path = tmp_path / "TRUNC.evtx"
+    path.write_bytes(b"ElfFile\x00" + b"\x00" * 100)
+
+    with pytest.raises(MalformedArtifactError):
+        EvtxParser(path).parse()
