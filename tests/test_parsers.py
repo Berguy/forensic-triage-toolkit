@@ -10,6 +10,7 @@ import pytest
 
 from forensic_triage.parsers.base_parser import MalformedArtifactError
 from forensic_triage.parsers.evtx_parser import EvtxParser
+from forensic_triage.parsers.lnk_parser import LNK_CLSID, LNK_MAGIC, LnkParser
 from forensic_triage.parsers.prefetch_parser import PrefetchParser
 from forensic_triage.parsers.registry_parser import RegistryParser
 
@@ -67,6 +68,56 @@ def _build_evtx(events: list[tuple[int, int]]) -> bytes:
         struct.pack_into("<Q", record, 0x10, ticks)
         struct.pack_into("<H", record, 0x30, event_id)
         payload += record
+    return bytes(payload)
+
+
+def _build_lnk(
+    local_base_path: str = "C:\\Windows\\System32\\cmd.exe",
+    arguments: str = "/c whoami",
+    relative_path: str = "..\\..\\..\\Windows\\System32\\cmd.exe",
+) -> bytes:
+    """Monta um atalho .lnk sintético mínimo, alinhado ao MS-SHLLINK.
+
+    Usa LNK_MAGIC e LNK_CLSID importados do parser para garantir
+    consistência permanente entre o artefato de teste e a validação.
+    """
+    header = bytearray(0x4C)
+    header[:4] = LNK_MAGIC
+    struct.pack_into("<I", header, 4, 0x4C)
+    header[8:24] = LNK_CLSID
+    flags = 0x2 | 0x8 | 0x20  # LinkInfo | RelativePath | Arguments
+    struct.pack_into("<I", header, 0x14, flags)
+    struct.pack_into("<Q", header, 0x18, SAMPLE_TICKS)  # criação
+    struct.pack_into("<Q", header, 0x20, SAMPLE_TICKS)  # acesso
+    struct.pack_into("<Q", header, 0x28, SAMPLE_TICKS)  # escrita
+    struct.pack_into("<I", header, 0x30, 1024)          # tamanho do alvo
+
+    payload = bytearray(header)
+
+    # LinkInfo com LocalBasePath (UTF-16 terminado em nulo)
+    base_utf16 = local_base_path.encode("utf-16-le") + b"\x00\x00"
+    local_base_offset = 0x1C
+    common_path_suffix_offset = local_base_offset + len(base_utf16)
+    link_info_size = common_path_suffix_offset
+    link_info = bytearray(link_info_size)
+    struct.pack_into("<I", link_info, 0, link_info_size)
+    struct.pack_into("<I", link_info, 4, 0x1C)          # header size
+    struct.pack_into("<I", link_info, 8, 0)             # flags
+    struct.pack_into("<I", link_info, 0x0C, 0)          # volume id offset
+    struct.pack_into("<I", link_info, 0x10, local_base_offset)
+    struct.pack_into("<I", link_info, 0x14, 0)          # network relative
+    struct.pack_into("<I", link_info, 0x18, common_path_suffix_offset)
+    link_info[local_base_offset : local_base_offset + len(base_utf16)] = base_utf16
+    payload += link_info
+
+    # StringData: relative_path, depois arguments (WORD count + UTF-16)
+    rel_utf16 = relative_path.encode("utf-16-le")
+    payload += struct.pack("<H", len(relative_path))
+    payload += rel_utf16
+    args_utf16 = arguments.encode("utf-16-le")
+    payload += struct.pack("<H", len(arguments))
+    payload += args_utf16
+
     return bytes(payload)
 
 
@@ -219,3 +270,52 @@ def test_evtx_rejects_truncated(tmp_path: Path):
 
     with pytest.raises(MalformedArtifactError):
         EvtxParser(path).parse()
+
+
+# --- Testes do LNK ---
+
+def test_lnk_parses_target(tmp_path: Path):
+    path = tmp_path / "cmd.lnk"
+    path.write_bytes(_build_lnk())
+
+    result = LnkParser(path).parse()
+
+    assert result.parser == "lnk"
+    assert result.artifact_id == path.name
+    assert result.data["file_size"] == 1024
+    assert PureWindowsPath(result.data["local_base_path"]).name.lower() == "cmd.exe"
+    assert result.data["arguments"] == "/c whoami"
+    assert "cmd.exe" in result.data["relative_path"]
+
+
+def test_lnk_reports_timestamps(tmp_path: Path):
+    path = tmp_path / "app.lnk"
+    path.write_bytes(_build_lnk())
+
+    result = LnkParser(path).parse()
+
+    expected = (FILETIME_EPOCH + timedelta(microseconds=SAMPLE_TICKS // 10)).isoformat()
+    assert result.data["created_utc"] == expected
+    assert result.data["accessed_utc"] == expected
+    assert result.data["written_utc"] == expected
+
+
+def test_lnk_rejects_bad_magic(tmp_path: Path):
+    path = tmp_path / "BAD.lnk"
+    path.write_bytes(b"NOTLNK\x00" + b"\x00" * 0x50)
+
+    with pytest.raises(MalformedArtifactError):
+        LnkParser(path).parse()
+
+
+def test_lnk_accepts_unexpected_clsid(tmp_path: Path):
+    """CLSID variante NÃO é rejeitado: é gravado como metadado (tolerância)."""
+    path = tmp_path / "VARIANT.lnk"
+    buf = bytearray(_build_lnk())
+    buf[8:24] = b"\x00" * 16  # CLSID não padrão (ferramenta de terceiros)
+    path.write_bytes(bytes(buf))
+
+    result = LnkParser(path).parse()
+
+    assert result.data["clsid_matches_standard"] is False
+    assert result.data["link_clsid"] == "0" * 32
