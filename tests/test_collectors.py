@@ -6,11 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from forensic_triage.collectors.base_collector import BaseCollector
 from forensic_triage.collectors.live_collector import LiveCollector
 from forensic_triage.core.audit_logger import AuditLogger
 from forensic_triage.core.custody_chain import CustodyChain
-from forensic_triage.core.evidence_manifest import EvidenceManifest
+from forensic_triage.core.evidence_manifest import CollectionMethod, EvidenceManifest
 
 
 @pytest.fixture
@@ -27,11 +26,9 @@ def harness(tmp_path: Path):
 
 
 def test_live_collector_preserves_artifact(harness, tmp_path: Path):
-    # Cria um artefato de exemplo para o coletor processar.
     fake_artifact = tmp_path / "sample.pf"
     fake_artifact.write_bytes(b"FAKE_PREFETCH_DATA")
 
-    # Coletor "ao vivo" apontando para um único arquivo de teste.
     collector = LiveCollector(
         output_dir=harness["output"],
         manifest=harness["manifest"],
@@ -39,7 +36,6 @@ def test_live_collector_preserves_artifact(harness, tmp_path: Path):
         audit=harness["audit"],
         operator_identity="perito_teste",
     )
-    # Substitui o mapa de artefatos para apontar para o arquivo de teste.
     collector.ARTIFACT_PATHS = {"sample": str(fake_artifact)}
 
     collected = collector.collect()
@@ -47,8 +43,16 @@ def test_live_collector_preserves_artifact(harness, tmp_path: Path):
     assert collected[0].sha256
     assert (harness["output"] / "live" / "sample" / "sample.pf").exists()
 
+    # API real do manifesto: items (EvidenceItem), não artifacts.
+    assert len(harness["manifest"].items) == 1
+    item = harness["manifest"].items[0]
+    assert item.hash_value == collected[0].sha256
+    assert item.collection_method == CollectionMethod.LIVE
+    assert item.source_path == str(fake_artifact)
+    assert item.chain_hash is not None
 
-def test_collector_rejects_missing_artifact(harness, tmp_path: Path):
+
+def test_collector_skips_missing_artifact(harness, tmp_path: Path):
     collector = LiveCollector(
         output_dir=harness["output"],
         manifest=harness["manifest"],
@@ -57,5 +61,8 @@ def test_collector_rejects_missing_artifact(harness, tmp_path: Path):
         operator_identity="perito_teste",
     )
     collector.ARTIFACT_PATHS = {"missing": str(tmp_path / "nao_existe.bin")}
-    with pytest.raises(FileNotFoundError):
-        collector.collect()
+
+    collected = collector.collect()
+    # ISO 27037: artefato ausente é ignorado e auditado, sem exceção.
+    assert collected == []
+    assert len(harness["manifest"].items) == 0

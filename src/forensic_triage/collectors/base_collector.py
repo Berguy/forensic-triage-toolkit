@@ -14,7 +14,11 @@ from pathlib import Path
 
 from forensic_triage.core.audit_logger import AuditLogger
 from forensic_triage.core.custody_chain import CustodyChain
-from forensic_triage.core.evidence_manifest import EvidenceManifest
+from forensic_triage.core.evidence_manifest import (
+    CollectionMethod,
+    EvidenceManifest,
+    HashAlgorithm,
+)
 from forensic_triage.integrity.hashing import hash_file
 
 
@@ -41,12 +45,14 @@ class BaseCollector(ABC):
         custody: CustodyChain,
         audit: AuditLogger,
         operator_identity: str,
+        collection_method: CollectionMethod = CollectionMethod.LIVE,
     ) -> None:
         self.output_dir = output_dir
         self.manifest = manifest
         self.custody = custody
         self.audit = audit
         self.operator = operator_identity
+        self.collection_method = collection_method
         self._collected: list[CollectedArtifact] = []
 
     @abstractmethod
@@ -58,7 +64,9 @@ class BaseCollector(ABC):
         """Copia um artefato para a área de preservação, calculando o hash.
 
         A cópia é feita em modo somente-leitura e o hash SHA-256 é calculado
-        sobre o arquivo original antes de qualquer manipulação.
+        sobre o arquivo original antes de qualquer manipulação. O artefato é
+        registrado no manifesto via ``add_item``, que encadeia criptograficamente
+        cada evidência (cadeia de custódia — ISO/IEC 27037).
         """
         if not source.is_file():
             raise FileNotFoundError(f"Artefato não encontrado: {source}")
@@ -75,12 +83,12 @@ class BaseCollector(ABC):
             size_bytes=source.stat().st_size,
         )
         self._collected.append(artifact)
-        self.manifest.add_artifact(
-            artifact_id=relative_dest,
-            sha256=sha256,
+        self.manifest.add_item(
+            description=f"Coleta de artefato: {relative_dest}",
             source_path=str(source),
-            destination_path=str(dest),
-            operator_identity=self.operator,
+            collection_method=self.collection_method,
+            hash_value=sha256,
+            hash_algorithm=HashAlgorithm.SHA256,
         )
         self.audit.log_action(
             "collect",
