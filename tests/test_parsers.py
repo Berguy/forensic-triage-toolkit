@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import struct
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import pytest
 
@@ -122,8 +122,8 @@ def test_registry_parses_run_key(tmp_path: Path):
     assert result.data["format_version"] == "1.3"
     assert len(result.data["run_keys"]) == 1
     command = result.data["run_keys"][0]["command"]
-    # Asserção imune a variações de caminho: compara o nome do arquivo.
-    assert Path(command).name.lower() == "evil.exe"
+    # PureWindowsPath interpreta caminhos Windows em QUALQUER SO (Linux/Windows/macOS).
+    assert PureWindowsPath(command).name.lower() == "evil.exe"
 
 
 def test_registry_reports_last_written(tmp_path: Path):
