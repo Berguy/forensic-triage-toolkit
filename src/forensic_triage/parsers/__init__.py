@@ -11,9 +11,9 @@ from forensic_triage.parsers.registry_parser import RegistryParser
 
 __all__ = [
     "BaseParser",
+    "EvtxParser",
     "MalformedArtifactError",
     "ParsedArtifact",
-    "EvtxParser",
     "PrefetchParser",
     "RegistryParser",
 ]
