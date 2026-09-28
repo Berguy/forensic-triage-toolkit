@@ -36,6 +36,7 @@ source .venv/Scripts/activate
 pip install -e ".[dev]"
 pytest
 
+```
 
-##**Licença**
+## Licença
 Distribuído sob a Licença MIT. © 2026 Berguy Silva
