@@ -17,7 +17,7 @@ Este projeto segue as diretrizes da ISO/IEC 27037 (coleta e preservação de evi
 - Sprint 1 — Núcleo de integridade, criptografia e cadeia de custódia: ✅
 - Sprint 2 — Coletores de artefatos: ✅
 - Sprint 3 — Parsers: ✅
-- Sprint 4 — Analyzers (base_analyzer, persistence_analyzer — MITRE T1547.001): 🚧 em andamento
+- Sprint 4 — Analyzers (base_analyzer, persistence_analyzer — MITRE T1547.001): 🚧 em desenvolvimento
 
 ## Estrutura
 
