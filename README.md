@@ -28,15 +28,12 @@ Este projeto segue as diretrizes da ISO/IEC 27037 (coleta e preservação de evi
 - `src/forensic_triage/analyzers/` — analisadores de persistência e mapeamento MITRE ATT&CK
 - `tests/` — suíte de testes de integridade e conformidade
 
-## Como rodar os testes
+## Instalação
 
 ```bash
+git clone https://github.com/Berguy/forensic-triage-toolkit.git
+cd forensic-triage-toolkit
 python -m venv .venv
-source .venv/Scripts/activate
-pip install -e ".[dev]"
-pytest
-
-```
-
-## Licença
-Distribuído sob a Licença MIT. © 2026 Berguy Silva.
+source .venv/Scripts/activate   # Windows (Git Bash)
+# source .venv/bin/activate     # Linux/macOS
+pip install -e .
