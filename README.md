@@ -39,4 +39,4 @@ pytest
 ```
 
 ## Licença
-Distribuído sob a Licença MIT. © 2026 Berguy Silva
+Distribuído sob a Licença MIT. © 2026 Berguy Silva.
