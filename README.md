@@ -160,4 +160,4 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 
 - LinkedIn: https://www.linkedin.com/in/BerguySilva
 - GitHub: https://github.com/Berguy
-- Email: contao@berguysilva.com.br
+- Email: contato@berguysilva.com.br
