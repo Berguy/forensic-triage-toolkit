@@ -158,5 +158,5 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 
 **Berguy Silva** — Engenheiro de software, pós-graduado em Computação Forense e Perícia Digital e em Gestão de Projetos.
 
-- LinkedIn: [linkedin.com/in/BerguySilva](https://www.linkedin.com/in/BerguySilva)
-- GitHub: [github.com/Berguy](https://github.com/Berguy
+- LinkedIn: https://www.linkedin.com/in/BerguySilva
+- GitHub: https://github.com/Berguy
