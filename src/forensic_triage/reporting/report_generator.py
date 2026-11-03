@@ -31,11 +31,12 @@ class ReportGenerator:
         self,
         findings: Iterable[AnalyzerFinding],
         generated_at_utc: str | None = None,
+        findings_hash: str = "",
     ) -> TriageReport:
         """Gera o relatório ordenado, com score, sumário e hash de integridade.
 
-        O parâmetro generated_at_utc permite congelar o timestamp em testes
-        de determinismo — sem ele, o hash varia entre execuções.
+        findings_hash amarra o relatório ao arquivo de achados de origem.
+        generated_at_utc permite congelar o timestamp em testes de determinismo.
         """
         ordered = tuple(
             sorted(findings, key=lambda f: SEVERITY_ORDER.get(f.severity, 99))
@@ -67,6 +68,7 @@ class ReportGenerator:
             executive_summary=self._build_executive_summary(
                 ordered, summary, risk_score, risk_level
             ),
+            findings_hash=findings_hash,
         )
         return replace(report, integrity_hash=report.compute_integrity_hash())
 

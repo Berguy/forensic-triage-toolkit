@@ -1,0 +1,38 @@
+[
+  {
+    "analyzer": "persistence",
+    "artifact_id": "SYSTEM.hive",
+    "title": "Autostart em AppData",
+    "description": "Chave Run aponta para caminho suspeito em AppData\\Roaming",
+    "severity": "critical",
+    "mitre_technique": "T1547.001",
+    "evidence": {
+      "key": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\update.exe",
+      "path": "C:\\Users\\victim\\AppData\\Roaming\\update.exe"
+    }
+  },
+  {
+    "analyzer": "persistence",
+    "artifact_id": "SYSTEM.hive",
+    "title": "Servico com caminho nao cotado",
+    "description": "Caminho do servico contem espacos sem aspas, permitindo hijack",
+    "severity": "high",
+    "mitre_technique": "T1543.003",
+    "evidence": {
+      "service": "WindowsUpdateSvc",
+      "path": "C:\\Program Files\\Windows Update\\svc.exe"
+    }
+  },
+  {
+    "analyzer": "prefetch",
+    "artifact_id": "PREFETCH",
+    "title": "Execucao de ferramenta de despejo de credenciais",
+    "description": "Prefetch indica execucao de mimikatz.exe",
+    "severity": "critical",
+    "mitre_technique": "T1003.001",
+    "evidence": {
+      "executable": "MIMIKATZ.EXE",
+      "run_count": 3
+    }
+  }
+]

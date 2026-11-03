@@ -13,9 +13,9 @@ from forensic_triage.analyzers.base_analyzer import AnalyzerFinding
 class TriageReport:
     """Relatório consolidado de triagem forense.
 
-    Imutável por construção: depois de gerado, o relatório não pode ser
-    alterado em memória. O integrity_hash cobre todos os campos exceto
-    ele mesmo, permitindo verificação posterior (ISO/IEC 27037).
+    Imutável por construção. O integrity_hash cobre todos os campos exceto
+    ele mesmo, incluindo o findings_hash que amarra o relatório ao arquivo
+    de achados de origem (ISO/IEC 27037).
     """
 
     case_id: str
@@ -29,6 +29,7 @@ class TriageReport:
     risk_score: int
     risk_level: str
     executive_summary: str
+    findings_hash: str = ""
     integrity_hash: str = ""
 
     def to_dict(self) -> dict:

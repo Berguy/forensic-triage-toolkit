@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "forensic-triage-toolkit"
-version = "0.1.0"
+version = "0.6.0"
 description = "Triagem forense de sistemas comprometidos com integridade criptográfica e conformidade ISO/IEC 27037, 27041, 27042, 27043 e CNJ 552/2021"
 requires-python = ">=3.12"
 dependencies = [
@@ -18,6 +18,12 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.5",
 ]
+pdf = [
+    "reportlab>=4.0",
+]
+
+[project.scripts]
+forensic-triage = "forensic_triage.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]

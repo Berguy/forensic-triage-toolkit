@@ -29,6 +29,31 @@ class AnalyzerFinding:
     mitre_technique: str = ""
     evidence: dict = field(default_factory=dict)
 
+    def to_dict(self) -> dict:
+        """Serializa o achado para JSON, convertendo o enum de severidade."""
+        return {
+            "analyzer": self.analyzer,
+            "artifact_id": self.artifact_id,
+            "title": self.title,
+            "description": self.description,
+            "severity": self.severity.value,
+            "mitre_technique": self.mitre_technique,
+            "evidence": self.evidence,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> AnalyzerFinding:
+        """Reconstrói o achado a partir do dicionário serializado."""
+        return cls(
+            analyzer=data["analyzer"],
+            artifact_id=data["artifact_id"],
+            title=data["title"],
+            description=data["description"],
+            severity=Severity(data["severity"]),
+            mitre_technique=data.get("mitre_technique", ""),
+            evidence=data.get("evidence", {}),
+        )
+
 
 class BaseAnalyzer(ABC):
     """Classe base para todos os analyzers de artefatos.
