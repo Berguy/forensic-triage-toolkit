@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from forensic_triage.collectors.base_collector import BaseCollector
+from forensic_triage.collectors.base_collector import BaseCollector, CollectedArtifact
 
 
 class ImageCollector(BaseCollector):
@@ -20,11 +20,14 @@ class ImageCollector(BaseCollector):
         if not image_path.is_file():
             raise FileNotFoundError(f"Imagem não encontrada: {image_path}")
 
-    def collect(self) -> list:
-        # Registra a imagem em si como evidência de origem.
-        artifact = self._preserve(
-            self.image_path, f"image/{self.image_path.name}"
-        )
+    def collect(self) -> list[CollectedArtifact]:
+        """Registra a imagem de disco como evidência de origem.
+
+        A imagem em si é preservada e hasheada — ela é a fonte primária de
+        toda a evidência derivada. A operação de montagem é auditada com o
+        prefixo do SHA-256 para rastreabilidade (ISO/IEC 27037).
+        """
+        artifact = self._preserve(self.image_path, f"image/{self.image_path.name}")
         self.audit.log_action(
             "image_mount",
             {"image": self.image_path.name, "sha256": artifact.sha256[:16]},

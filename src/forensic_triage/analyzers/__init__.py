@@ -1,0 +1,1 @@
+"""Analyzers — camada de análise investigativa sobre artefatos parseados."""
