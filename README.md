@@ -1,9 +1,10 @@
 # Forensic Artifact Triage Toolkit
 
-![License](https://img.shields.io/badge/license-MIT-blue)
-![CI](https://img.shields.io/badge/CI-passing-brightgreen)
-![Python](https://img.shields.io/badge/python-3.12%2B-blue)
-![Tests](https://img.shields.io/badge/tests-41%20passing-brightgreen)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![CI](https://github.com/Berguy/forensic-triage-toolkit/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)
+![Tests](https://img.shields.io/badge/tests-55%20passing-brightgreen.svg)
+![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)
 
 **Triagem forense de sistemas Windows comprometidos com integridade criptográfica e conformidade normativa.**
 
@@ -25,9 +26,9 @@ Este toolkit parte do princípio oposto: **a cadeia de custódia é o produto, n
 
 ### Núcleo de integridade e cadeia de custódia
 
-- **Hashing criptográfico multialgoritmo** — cálculo de SHA-256, SHA-512 e MD5 sobre artefatos coletados, com verificação de integridade posterior
-- **Manifesto de evidências** — registro estruturado de cada artefato coletado, com metadados de origem, timestamp e hash
-- **Cadeia de custódia** — rastreamento do ciclo de vida de cada evidência, do momento da coleta até a análise
+- **Hashing criptográfico multialgoritmo** — cálculo de SHA-256, SHA3-256 e BLAKE2b sobre artefatos coletados, com verificação de integridade posterior
+- **Manifesto de evidências** — registro estruturado de cada artefato coletado, com metadados de origem, timestamp UTC e hash
+- **Cadeia de hashes encadeados** — cada item carrega o hash do anterior, tornando qualquer adulteração detectável
 - **Log de auditoria** — registro imutável das operações executadas sobre as evidências
 
 ### Coleta de artefatos Windows
@@ -47,9 +48,17 @@ Este toolkit parte do princípio oposto: **a cadeia de custódia é o produto, n
 - **Analyzer de persistência** — detecção de mecanismos de autostart em chaves Run/RunOnce, com classificação de severidade e mapeamento ao MITRE ATT&CK T1547.001
 - **Classificação por suspeita** — caminhos em AppData, Temp e ProgramData são classificados como críticos; diretórios de sistema legítimos são ignorados, evitando falsos positivos
 
+### Relatório de triagem
+
+- **Consolidação de achados** — agrega resultados de múltiplos analyzers, ordenados por severidade decrescente
+- **Score de risco agregado** — cálculo de 0 a 100 com pesos por severidade, classificando o caso em cinco faixas
+- **Hash de integridade do relatório** — SHA-256 sobre payload canônico, cobrindo achados e hashes das evidências de origem
+- **Exportação em JSON e Markdown** — JSON para integração com outras ferramentas, Markdown para leitura humana
+- **Verificação posterior** — o relatório pode ser revalidado a qualquer momento; qualquer alteração em achado ou em hash de evidência quebra a verificação
+
 ### Qualidade
 
-- **41 testes automatizados** cobrindo integridade, conformidade, coletores, parsers e analyzers
+- **55 testes automatizados** cobrindo integridade, conformidade, coletores, parsers, analyzers e relatório
 - **95% de cobertura de código**
 - **Integração contínua** em Python 3.12 e 3.13
 - **Lint** com Ruff
@@ -141,6 +150,43 @@ else:
     print("ALERTA: manifesto adulterado")
 ```
 
+### Gerar o relatório de triagem
+
+```python
+from forensic_triage.analyzers.persistence_analyzer import PersistenceAnalyzer
+from forensic_triage.reporting.exporters import export_json, export_markdown
+from forensic_triage.reporting.report_generator import ReportGenerator
+
+# Analisa os artefatos parseados e obtém os achados
+analyzer = PersistenceAnalyzer()
+findings = analyzer.analyze(parsed_registry)
+
+# Consolida em relatório com hash de integridade
+generator = ReportGenerator(manifesto)
+report = generator.generate(findings)
+
+export_json(report, "relatorio_triagem.json")
+export_markdown(report, "relatorio_triagem.md")
+
+print(f"Risco: {report.risk_score}/100 ({report.risk_level})")
+print(f"Hash: {report.integrity_hash}")
+```
+
+### Verificar a integridade do relatório
+
+```python
+from forensic_triage.core.evidence_manifest import EvidenceManifest
+from forensic_triage.reporting.report_generator import ReportGenerator
+
+manifesto = EvidenceManifest.import_json("manifesto_evidencias.json")
+report = ReportGenerator(manifesto).generate(findings)
+
+if report.verify_integrity():
+    print("Relatório íntegro")
+else:
+    print("ALERTA: relatório adulterado")
+```
+
 ### Executar os testes
 
 ```bash
@@ -157,7 +203,9 @@ forensic_triage/
 ├── integrity/     # hashing criptográfico multialgoritmo
 ├── collectors/    # coletores de artefatos Windows
 ├── parsers/       # parsers de artefatos (Prefetch, Registro, EVTX, LNK)
-└── analyzers/     # análise de persistência e mapeamento MITRE ATT&CK
+├── analyzers/     # análise de persistência e mapeamento MITRE ATT&CK
+├── reporting/     # geração e exportação do relatório de triagem
+└── scoring/       # cálculo do score de risco agregado
 ```
 
 ---
@@ -171,8 +219,8 @@ forensic_triage/
 | Sprint 2 | Coletores de artefatos Windows                                    | Concluída |
 | Sprint 3 | Parsers de artefatos (Prefetch, Registro, EVTX, LNK)              | Concluída |
 | Sprint 4 | Analyzers — base_analyzer, persistence_analyzer (MITRE T1547.001) | Concluída |
-| Sprint 5 | Relatório de triagem com classificação de severidade              | Planejada |
-| Sprint 6 | CLI unificada e empacotamento para distribuição                   | Planejada |
+| Sprint 5 | Relatório de triagem com hash canônico e score de risco           | Concluída |
+| Sprint 6 | CLI unificada, entry point e exportação em PDF                    | Planejada |
 
 ---
 
@@ -183,6 +231,7 @@ Contribuições são bem-vindas. Para mudanças relevantes, abra uma issue descr
 ```bash
 git checkout -b feature/nome-da-feature
 pytest          # garanta que os testes passam
+ruff check src tests
 git commit -m "feat: descrição da mudança"
 ```
 
